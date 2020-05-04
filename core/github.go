@@ -60,7 +60,6 @@ func GetRepositories(session *Session) {
 				if *e.Type == "PushEvent" {
 					observedKeys[e.GetRepo().GetID()] = true
 					session.Repositories <- e.GetRepo().GetID()
-					session.Log.Warn("is there a user? %s", e.GetActor().GetLogin())
 				}
 			}
 

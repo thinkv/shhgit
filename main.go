@@ -46,7 +46,7 @@ func ProcessGists() {
 		go func(tid int) {
 			for {
 				gistUrl := <-session.Gists
-				processRepositoryOrGist(gistUrl, "")
+				processRepositoryOrGist(gistUrl, "test")
 			}
 		}(i)
 	}
