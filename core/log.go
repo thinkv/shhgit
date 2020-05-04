@@ -112,5 +112,8 @@ func (l *Logger) Discord(title string, description string, URL string,) {
 	values.Embed.URL = URL
 	values.Embed.Color = 6545520
 	jsonValue, err := json.Marshal(values)
+	if err != nil {
+		fmt.Printf(err)
+	}
 	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
 }
