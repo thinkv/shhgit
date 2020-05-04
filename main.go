@@ -33,7 +33,7 @@ func ProcessRepositories() {
 					uint(repo.GetStargazersCount()) >= *session.Options.MinimumStars &&
 					uint(repo.GetSize()) < *session.Options.MaximumRepositorySize {
 
-					processRepositoryOrGist(repo.GetCloneURL(), userName)
+					processRepositoryOrGist(repo.GetCloneURL(), repo.GetOwner().GetName())
 				}
 			}
 		}(i)
@@ -47,7 +47,7 @@ func ProcessGists() {
 		go func(tid int) {
 			for {
 				gistUrl := <-session.Gists
-				processRepositoryOrGist(gistUrl, "gist for now")
+				processRepositoryOrGist(gistUrl, "")
 			}
 		}(i)
 	}
