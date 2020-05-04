@@ -35,15 +35,20 @@ type Logger struct {
 	silent bool
 }
 
-type Embeds []struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		URL         string `json:"url"`
-		Color       int    `json:"color"`
+type DiscMessageEmbedFields struct {
+    Name	string `json:"name"`
+    Value	string `json:"value"`
+}
+
+type DiscMessageEmbed struct {
+    Title       string `json:"title"`
+    URL         string `json:"url"`
+    Color       int    `json:"color"`
+    Fields	[]DiscMessageEmbedFields `json:"fields"`
 }
 
 type DiscMessage struct {
-	Embeds `json:"embeds"`
+    Embeds []DiscMessageEmbed `json:"embeds"`
 }
 
 func (l *Logger) SetDebug(d bool) {
@@ -108,9 +113,8 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 }
 
 func (l *Logger) Discord(title string, description string, URL string,) {
-	pair1 := Embeds{{title, "```" + description + "```", URL, 6545520}}
-	var values = DiscMessage{pair1}
-	jsonValue, err := json.Marshal(values)
+	var message = DiscMessage{Embeds: []DiscMessageEmbed{{title, URL, 6545520, []DiscMessageEmbedFields{{"Author","test"},{"Commit URL","test"},{"Blob URL","test"},{"Commit Message","test"},{"Snippet","```" + description + "```"}}}}}
+	jsonValue, err := json.Marshal(message)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
