@@ -1,149 +1,123 @@
 package core
 
 import (
-	"context"
-	"time"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"sync"
 
-	"github.com/google/go-github/github"
+	"github.com/fatih/color"
 )
-
-type GitHubClientWrapper struct {
-	*github.Client
-	Token            string
-	RateLimitedUntil time.Time
-}
 
 const (
-	perPage = 300
-	sleep   = 30 * time.Second
+	FATAL     = 5
+	ERROR     = 4
+	IMPORTANT = 3
+	WARN      = 2
+	INFO      = 1
+	DEBUG     = 0
 )
 
-func GetRepositories(session *Session) {
-	localCtx, cancel := context.WithCancel(session.Context)
-	defer cancel()
-	observedKeys := map[int64]bool{}
-	for c := time.Tick(sleep); ; {
-		opt := &github.ListOptions{PerPage: perPage}
-		client := session.GetClient()
+var LogColors = map[int]*color.Color{
+	FATAL:     color.New(color.FgRed).Add(color.Bold),
+	ERROR:     color.New(color.FgRed),
+	WARN:      color.New(color.FgYellow),
+	IMPORTANT: color.New(),
+	DEBUG:     color.New(color.Faint),
+}
 
-		for {
-			events, resp, err := client.Activity.ListEvents(localCtx, opt)
+type Logger struct {
+	sync.Mutex
 
-			if err != nil {
-				if _, ok := err.(*github.RateLimitError); ok {
-					session.Log.Warn("Token %s[..] rate limited. Reset at %s", client.Token[:10], resp.Rate.Reset)
-					client.RateLimitedUntil = resp.Rate.Reset.Time
-					break
-				}
+	debug  bool
+	silent bool
+}
 
-				if _, ok := err.(*github.AbuseRateLimitError); ok {
-					GetSession().Log.Fatal("GitHub API abused detected. Quitting...")
-				}
+type DiscMessageEmbedFields struct {
+    Name	string `json:"name"`
+    Value	string `json:"value"`
+}
 
-				GetSession().Log.Important("Error getting GitHub events... trying again", err)
-			}
+type DiscMessageEmbed struct {
+    Title       string `json:"title"`
+    URL         string `json:"url"`
+    Color       int    `json:"color"`
+    Fields	[]DiscMessageEmbedFields `json:"fields"`
+}
 
-			if opt.Page == 0 {
-				session.Log.Warn("Token %s[..] has %d/%d calls remaining.", client.Token[:10], resp.Rate.Remaining, resp.Rate.Limit)
-			}
+type DiscMessage struct {
+	Content		string `json:"content"`
+    Embeds []DiscMessageEmbed `json:"embeds"`
+}
 
-			newEvents := make([]*github.Event, 0, len(events))
-			for _, e := range events {
-				if observedKeys[e.GetRepo().GetID()] {
-					continue
-				}
+func (l *Logger) SetDebug(d bool) {
+	l.debug = d
+}
 
-				newEvents = append(newEvents, e)
-			}
+func (l *Logger) SetSilent(d bool) {
+	l.silent = d
+}
 
-			for _, e := range newEvents {
-				if *e.Type == "PushEvent" {
-					observedKeys[e.GetRepo().GetID()] = true
-					session.Repositories <- e.GetRepo().GetID()
-				}
-			}
+func (l *Logger) Log(level int, format string, args ...interface{}) {
+	l.Lock()
+	defer l.Unlock()
 
-			if resp.NextPage == 0 {
-				break
-			}
+	if level == DEBUG && !l.debug {
+		return
+	}
 
-			opt.Page = resp.NextPage
-			time.Sleep(5 * time.Second)
-		}
+	if l.silent && level < IMPORTANT {
+		return
+	}
 
-		select {
-		case <-c:
-			continue
-		case <-localCtx.Done():
-			cancel()
-			return
-		}
+	if c, ok := LogColors[level]; ok {
+		c.Printf(format+"\n", args...)
+	} else {
+		fmt.Printf(format+"\n", args...)
+	}
+
+	// if level > INFO && session.Config.SlackWebhook != "" {
+	// 	values := map[string]string{"text": fmt.Sprintf(format+"\n", args...)}
+	// 	jsonValue, _ := json.Marshal(values)
+	// 	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
+	// }
+
+	if level == FATAL {
+		os.Exit(1)
 	}
 }
 
-func GetGists(session *Session) {
-	localCtx, cancel := context.WithCancel(session.Context)
-	defer cancel()
-
-	observedKeys := map[string]bool{}
-	opt := &github.GistListOptions{}
-
-	for c := time.Tick(sleep); ; {
-		client := session.GetClient()
-		gists, resp, err := client.Gists.ListAll(localCtx, opt)
-
-		if err != nil {
-			if _, ok := err.(*github.RateLimitError); ok {
-				session.Log.Warn("Token %s[..] rate limited. Reset at %s", client.Token[:10], resp.Rate.Reset)
-				client.RateLimitedUntil = resp.Rate.Reset.Time
-				break
-			}
-
-			if _, ok := err.(*github.AbuseRateLimitError); ok {
-				GetSession().Log.Fatal("GitHub API abused detected. Quitting...")
-			}
-
-			GetSession().Log.Important("Error getting GitHub Gists... trying again", err)
-		}
-
-		newGists := make([]*github.Gist, 0, len(gists))
-		for _, e := range gists {
-			if observedKeys[e.GetID()] {
-				continue
-			}
-
-			newGists = append(newGists, e)
-		}
-
-		for _, e := range newGists {
-			observedKeys[e.GetID()] = true
-			session.Gists <- e.GetGitPullURL()
-		}
-
-		opt.Since = time.Now()
-
-		select {
-		case <-c:
-			continue
-		case <-localCtx.Done():
-			cancel()
-			return
-		}
-	}
+func (l *Logger) Fatal(format string, args ...interface{}) {
+	l.Log(FATAL, format, args...)
 }
 
-func GetRepository(session *Session, id int64) (*github.Repository, error) {
-	client := session.GetClient()
-	repo, resp, err := client.Repositories.GetByID(session.Context, id)
+func (l *Logger) Error(format string, args ...interface{}) {
+	l.Log(ERROR, format, args...)
+}
 
+func (l *Logger) Warn(format string, args ...interface{}) {
+	l.Log(WARN, format, args...)
+}
+
+func (l *Logger) Important(format string, args ...interface{}) {
+	l.Log(IMPORTANT, format, args...)
+}
+
+func (l *Logger) Info(format string, args ...interface{}) {
+	l.Log(INFO, format, args...)
+}
+
+func (l *Logger) Debug(format string, args ...interface{}) {
+	l.Log(DEBUG, format, args...)
+}
+
+func (l *Logger) Discord(title string, filename string, description string, URL string,) {
+	var message = DiscMessage{URL, []DiscMessageEmbed{{title, URL, 6545520, []DiscMessageEmbedFields{{"Author","test"},{"Commit URL","test"},{"Blob URL","test"},{"Commit Message",filename},{"Snippet","```" + description + "```"}}}}}
+	jsonValue, err := json.Marshal(message)
 	if err != nil {
-		return nil, err
+		fmt.Println(err.Error())
 	}
-
-	if resp.Rate.Remaining <= 1 {
-		session.Log.Warn("Token %s[..] rate limited. Reset at %s", client.Token[:10], resp.Rate.Reset)
-		client.RateLimitedUntil = resp.Rate.Reset.Time
-	}
-
-	return repo, nil
+	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
 }

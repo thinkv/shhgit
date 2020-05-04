@@ -32,7 +32,7 @@ func ProcessRepositories() {
 					uint(repo.GetStargazersCount()) >= *session.Options.MinimumStars &&
 					uint(repo.GetSize()) < *session.Options.MaximumRepositorySize {
 
-					processRepositoryOrGist(repo.GetCloneURL(), repo.GetOwner().GetName())
+					processRepositoryOrGist(repo.GetCloneURL())
 				}
 			}
 		}(i)
@@ -46,13 +46,13 @@ func ProcessGists() {
 		go func(tid int) {
 			for {
 				gistUrl := <-session.Gists
-				processRepositoryOrGist(gistUrl, "test")
+				processRepositoryOrGist(gistUrl)
 			}
 		}(i)
 	}
 }
 
-func processRepositoryOrGist(url string, username string) {
+func processRepositoryOrGist(url string) {
 	var (
 		matches    []string
 		matchedAny bool = false
@@ -94,13 +94,13 @@ func processRepositoryOrGist(url string, username string) {
 							count := len(matches)
 							m := strings.Join(matches, ", ")
 							session.Log.Important("[%s] %d %s for %s in file %s: %s", url, count, core.Pluralize(count, "match", "matches"), color.GreenString(signature.Name()), relativeFileName, color.YellowString(m))
-							session.Log.Discord(signature.Name(), relativeFileName, m, url, username)
+							session.Log.Discord(signature.Name(), relativeFileName, m, url)
 							session.WriteToCsv([]string{url, signature.Name(), relativeFileName, m})
 						}
 					} else {
 						if *session.Options.PathChecks {
 							session.Log.Important("[%s] Matching file %s for %s", url, color.YellowString(relativeFileName), color.GreenString(signature.Name()))
-							session.Log.Discord(signature.Name(), relativeFileName, "N/A", url, username)
+							session.Log.Discord(signature.Name(), relativeFileName, "N/A", url)
 							session.WriteToCsv([]string{url, signature.Name(), relativeFileName, ""})
 						}
 
@@ -115,7 +115,7 @@ func processRepositoryOrGist(url string, username string) {
 
 									if entropy >= *session.Options.EntropyThreshold {
 										session.Log.Important("[%s] Potential secret in %s = %s", url, color.YellowString(relativeFileName), color.GreenString(scanner.Text()))
-										session.Log.Discord("Potential secret", relativeFileName, scanner.Text(), url, username)
+										session.Log.Discord("Potential secret", relativeFileName, scanner.Text(), url)
 										session.WriteToCsv([]string{url, signature.Name(), relativeFileName, scanner.Text()})
 									}
 								}
