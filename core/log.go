@@ -35,13 +35,15 @@ type Logger struct {
 	silent bool
 }
 
-type DiscMessage struct {
-	Embeds []struct {
+type Embeds []struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		URL         string `json:"url"`
 		Color       int    `json:"color"`
-	} `json:"embed"`
+}
+
+type DiscMessage struct {
+	Embeds `json:"embeds"`
 }
 
 func (l *Logger) SetDebug(d bool) {
@@ -106,11 +108,8 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 }
 
 func (l *Logger) Discord(title string, description string, URL string,) {
-	var values DiscMessage
-	values.Embeds.Title = title
-	values.Embeds.Description = "```" + description + "```"
-	values.Embeds.URL = URL
-	values.Embeds.Color = 6545520
+	pair1 := Embeds{{title, "```" + description + "```", URL, 6545520}}
+	var values = DiscMessage{pair1}
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
 		fmt.Println(err.Error())
