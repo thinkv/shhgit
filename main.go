@@ -100,6 +100,7 @@ func processRepositoryOrGist(url string) {
 					} else {
 						if *session.Options.PathChecks {
 							session.Log.Important("[%s] Matching file %s for %s", url, color.YellowString(relativeFileName), color.GreenString(signature.Name()))
+							session.Log.Discord(signature.Name(), "N/A", url)
 							session.WriteToCsv([]string{url, signature.Name(), relativeFileName, ""})
 						}
 
@@ -114,6 +115,7 @@ func processRepositoryOrGist(url string) {
 
 									if entropy >= *session.Options.EntropyThreshold {
 										session.Log.Important("[%s] Potential secret in %s = %s", url, color.YellowString(relativeFileName), color.GreenString(scanner.Text()))
+										session.Log.Discord("Potential secret", scanner.Text(), url)
 										session.WriteToCsv([]string{url, signature.Name(), relativeFileName, scanner.Text()})
 									}
 								}
