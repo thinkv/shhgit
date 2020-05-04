@@ -27,7 +27,6 @@ type Session struct {
 	Context      context.Context
 	Clients      []*GitHubClientWrapper
 	CsvWriter    *csv.Writer
-	Users		chan string
 }
 
 var (

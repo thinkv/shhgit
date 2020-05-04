@@ -21,7 +21,6 @@ func ProcessRepositories() {
 
 			for {
 				repositoryId := <-session.Repositories
-				userName := <-session.Users
 				repo, err := core.GetRepository(session, repositoryId)
 
 				if err != nil {
