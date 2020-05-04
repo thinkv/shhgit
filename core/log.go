@@ -105,7 +105,7 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 	l.Log(DEBUG, format, args...)
 }
 
-func (l *Logger) Discord(title string, description string, URL string,) {
+func Discord(title string, description string, URL string,) {
 	var values DiscMessage
 	values.Embed.Title = title
 	values.Embed.Description = "```" + description + "```"
@@ -113,7 +113,7 @@ func (l *Logger) Discord(title string, description string, URL string,) {
 	values.Embed.Color = 6545520
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
-		//fmt.Printf(err)
+		fmt.Println(err.Error())
 	}
 	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
 }
