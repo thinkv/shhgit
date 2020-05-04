@@ -61,6 +61,7 @@ func GetRepositories(session *Session) {
 					observedKeys[e.GetRepo().GetID()] = true
 					session.Repositories <- e.GetRepo().GetID()
 					session.Users <- e.GetActor().GetLogin()
+					session.Log.Warn("is there a user? %s", e.GetActor().GetLogin())
 				}
 			}
 
