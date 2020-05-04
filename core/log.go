@@ -107,10 +107,10 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 
 func (l *Logger) Discord(title string, description string, URL string,) {
 	var values DiscMessage
-	values.Embeds[0].Title = title
-	values.Embeds[0].Description = "```" + description + "```"
-	values.Embeds[0].URL = URL
-	values.Embeds[0].Color = 6545520
+	values.Embeds.Title = title
+	values.Embeds.Description = "```" + description + "```"
+	values.Embeds.URL = URL
+	values.Embeds.Color = 6545520
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
 		fmt.Println(err.Error())
