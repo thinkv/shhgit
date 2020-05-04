@@ -105,7 +105,7 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 	l.Log(DEBUG, format, args...)
 }
 
-func Discord(title string, description string, URL string,) {
+func (l *Logger) Discord(title string, description string, URL string,) {
 	var values DiscMessage
 	values.Embed.Title = title
 	values.Embed.Description = "```" + description + "```"
