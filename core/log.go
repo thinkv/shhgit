@@ -111,6 +111,6 @@ func (l *Logger) Discord(title string, description string, URL string,) {
 	values.Embed.Description = "```" + description + "```"
 	values.Embed.URL = URL
 	values.Embed.Color = 6545520
-	jsonValue,err := json.Marshal(values)
+	jsonValue, err := json.Marshal(values)
 	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
 }
