@@ -35,6 +35,15 @@ type Logger struct {
 	silent bool
 }
 
+type DiscMessage struct {
+	Embed struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		URL         string `json:"url"`
+		Color       int    `json:"color"`
+	} `json:"embed"`
+}
+
 func (l *Logger) SetDebug(d bool) {
 	l.debug = d
 }
@@ -61,11 +70,11 @@ func (l *Logger) Log(level int, format string, args ...interface{}) {
 		fmt.Printf(format+"\n", args...)
 	}
 
-	if level > INFO && session.Config.SlackWebhook != "" {
-		values := map[string]string{"text": fmt.Sprintf(format+"\n", args...)}
-		jsonValue, _ := json.Marshal(values)
-		http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
-	}
+	// if level > INFO && session.Config.SlackWebhook != "" {
+	// 	values := map[string]string{"text": fmt.Sprintf(format+"\n", args...)}
+	// 	jsonValue, _ := json.Marshal(values)
+	// 	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
+	// }
 
 	if level == FATAL {
 		os.Exit(1)
@@ -94,4 +103,14 @@ func (l *Logger) Info(format string, args ...interface{}) {
 
 func (l *Logger) Debug(format string, args ...interface{}) {
 	l.Log(DEBUG, format, args...)
+}
+
+func (l *Logger) Discord(title string, description string, URL string,) {
+	var values DiscMessage
+	values.Embed.Title = title
+	values.Embed.Description = "```" + description + "```"
+	values.Embed.URL = URL
+	values.Embed.Color = 6545520
+	jsonValue := json.Marshal(values)
+	http.Post(session.Config.SlackWebhook, "application/json", bytes.NewBuffer(jsonValue))
 }

@@ -94,6 +94,7 @@ func processRepositoryOrGist(url string) {
 							count := len(matches)
 							m := strings.Join(matches, ", ")
 							session.Log.Important("[%s] %d %s for %s in file %s: %s", url, count, core.Pluralize(count, "match", "matches"), color.GreenString(signature.Name()), relativeFileName, color.YellowString(m))
+							session.Log.Discord(signature.Name(), m, url)
 							session.WriteToCsv([]string{url, signature.Name(), relativeFileName, m})
 						}
 					} else {
