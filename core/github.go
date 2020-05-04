@@ -60,6 +60,7 @@ func GetRepositories(session *Session) {
 				if *e.Type == "PushEvent" {
 					observedKeys[e.GetRepo().GetID()] = true
 					session.Repositories <- e.GetRepo().GetID()
+					session.Users <- e.GetActor().GetLogin()
 				}
 			}
 

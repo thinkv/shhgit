@@ -113,8 +113,8 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 	l.Log(DEBUG, format, args...)
 }
 
-func (l *Logger) Discord(title string, filename string, description string, URL string,) {
-	var message = DiscMessage{URL, []DiscMessageEmbed{{title, URL, 6545520, []DiscMessageEmbedFields{{"Author","test"},{"Commit URL","test"},{"Blob URL","test"},{"Commit Message",filename},{"Snippet","```" + description + "```"}}}}}
+func (l *Logger) Discord(title string, filename string, description string, URL string, username string) {
+	var message = DiscMessage{URL, []DiscMessageEmbed{{title, URL, 6545520, []DiscMessageEmbedFields{{"Author",username},{"Commit URL","test"},{"Blob URL","test"},{"Commit Message",filename},{"Snippet","```" + description + "```"}}}}}
 	jsonValue, err := json.Marshal(message)
 	if err != nil {
 		fmt.Println(err.Error())
